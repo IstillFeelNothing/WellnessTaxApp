@@ -14,7 +14,17 @@ export const getOrders = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { latitude, longitude, subtotal } = req.body;
+    const rawLat = req.body.latitude;
+    const rawLon = req.body.longitude;
+    const rawSubtotal = req.body.subtotal;
+
+    const latitude = parseFloat(rawLat);
+    const longitude = parseFloat(rawLon);
+    const subtotal = parseFloat(rawSubtotal);
+
+    if (!isFinite(latitude) || !isFinite(longitude) || !isFinite(subtotal)) {
+      return res.status(400).json({ message: "Invalid latitude, longitude or subtotal" });
+    }
 
     const order = await orderService.createOrder({
       latitude,
@@ -65,16 +75,24 @@ export const importOrders = async (req: Request, res: Response) => {
           for (let i = 0; i < results.length; i++) {
             try {
               const row = results[i];
-              
-              if (!row.latitude || !row.longitude || !row.subtotal) {
+              if (row.latitude === undefined || row.latitude === "" || row.longitude === undefined || row.longitude === "" || row.subtotal === undefined || row.subtotal === "") {
                 errors.push(`Row ${i + 1}: Missing required fields (latitude, longitude, subtotal)`);
                 continue;
               }
 
+              const latitude = parseFloat(row.latitude);
+              const longitude = parseFloat(row.longitude);
+              const subtotal = parseFloat(row.subtotal);
+
+              if (!isFinite(latitude) || !isFinite(longitude) || !isFinite(subtotal)) {
+                errors.push(`Row ${i + 1}: Invalid numeric values`);
+                continue;
+              }
+
               const order = await orderService.createOrder({
-                latitude: parseFloat(row.latitude),
-                longitude: parseFloat(row.longitude),
-                subtotal: parseFloat(row.subtotal),
+                latitude,
+                longitude,
+                subtotal,
                 timestamp: row.timestamp ? new Date(row.timestamp) : new Date(),
               });
 
@@ -90,6 +108,7 @@ export const importOrders = async (req: Request, res: Response) => {
 
           res.json({
             created: created.length,
+            createdItems: created,
             errors: errors.length > 0 ? errors : undefined,
           });
         } catch (error: any) {
@@ -107,6 +126,6 @@ export const importOrders = async (req: Request, res: Response) => {
         fs.unlinkSync(req.file.path);
       } catch (e) {}
     }
-    res.status(500).json({ message: `Import failed: ${error.message}` });
+      res.status(500).json({ message: "Import failed: " + error.message });
   }
 };
