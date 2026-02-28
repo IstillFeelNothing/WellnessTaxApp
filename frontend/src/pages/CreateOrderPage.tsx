@@ -1,5 +1,19 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { isAxiosError } from "axios";
 import { createOrder, importOrders } from "../api/api";
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    const responseMessage = (error.response?.data as { message?: string } | undefined)?.message;
+    return responseMessage || error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 export const CreateOrderPage = () => {
   const [latitude, setLatitude] = useState("");
@@ -11,7 +25,7 @@ export const CreateOrderPage = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importSuccess, setImportSuccess] = useState("");
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -29,14 +43,14 @@ export const CreateOrderPage = () => {
       setSubtotal("");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error creating order");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Error creating order"));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCsvImport = async (e: any) => {
+  const handleCsvImport = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!csvFile) {
       setError("Please select a CSV file");
@@ -54,8 +68,8 @@ export const CreateOrderPage = () => {
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = "";
       setTimeout(() => setImportSuccess(""), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error importing CSV");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Error importing CSV"));
     } finally {
       setLoading(false);
     }
@@ -65,9 +79,9 @@ export const CreateOrderPage = () => {
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1>Create Order</h1>
 
-      {success && <p style={{ color: "green", fontWeight: "bold" }}>✓ Order created successfully!</p>}
-      {importSuccess && <p style={{ color: "green", fontWeight: "bold" }}>✓ {importSuccess}</p>}
-      {error && <p style={{ color: "red", fontWeight: "bold" }}>✗ {error}</p>}
+      {success && <p style={{ color: "green", fontWeight: "bold" }}>Order created successfully</p>}
+      {importSuccess && <p style={{ color: "green", fontWeight: "bold" }}>{importSuccess}</p>}
+      {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
 
       <div style={{ marginBottom: "30px", padding: "15px", border: "1px solid #ddd", borderRadius: "5px" }}>
         <h2>Add Single Order</h2>

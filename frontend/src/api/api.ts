@@ -1,12 +1,12 @@
 import axios from "axios";
-import type { Order } from "../types";
+import type { OrdersQueryParams, OrdersResponse } from "../types";
 
 const api = axios.create({
   baseURL: "http://localhost:3000",
 });
 
-export const getOrders = async (): Promise<Order[]> => {
-  const res = await api.get("/orders");
+export const getOrders = async (params: OrdersQueryParams = {}): Promise<OrdersResponse> => {
+  const res = await api.get("/orders", { params });
   return res.data;
 };
 

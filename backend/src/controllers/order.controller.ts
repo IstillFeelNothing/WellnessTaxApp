@@ -3,11 +3,75 @@ import fs from "fs";
 import csv from "csv-parser";
 import { orderService } from "../services/order.service";
 
+const parseOptionalNumber = (value: unknown, fieldName: string) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const parsed = parseFloat(String(value));
+  if (!isFinite(parsed)) {
+    throw new Error(`Invalid query parameter: ${fieldName}`);
+  }
+
+  return parsed;
+};
+
+const parseOptionalPositiveInt = (value: unknown, fieldName: string) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const parsed = parseInt(String(value), 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid query parameter: ${fieldName}`);
+  }
+
+  return parsed;
+};
+
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const page = parseOptionalPositiveInt(req.query.page, "page") ?? 1;
+    const limit = parseOptionalPositiveInt(req.query.limit, "limit") ?? 10;
+    const id = parseOptionalPositiveInt(req.query.id, "id");
+    const minSubtotal = parseOptionalNumber(req.query.minSubtotal, "minSubtotal");
+    const maxSubtotal = parseOptionalNumber(req.query.maxSubtotal, "maxSubtotal");
+    const minTotal = parseOptionalNumber(req.query.minTotal, "minTotal");
+    const maxTotal = parseOptionalNumber(req.query.maxTotal, "maxTotal");
+
+    if (
+      minSubtotal !== undefined &&
+      maxSubtotal !== undefined &&
+      minSubtotal > maxSubtotal
+    ) {
+      return res.status(400).json({ message: "minSubtotal cannot be greater than maxSubtotal" });
+    }
+
+    if (
+      minTotal !== undefined &&
+      maxTotal !== undefined &&
+      minTotal > maxTotal
+    ) {
+      return res.status(400).json({ message: "minTotal cannot be greater than maxTotal" });
+    }
+
+    const orders = await orderService.getAllOrders({
+      page,
+      limit,
+      filters: {
+        id,
+        minSubtotal,
+        maxSubtotal,
+        minTotal,
+        maxTotal,
+      },
+    });
+
     res.json(orders);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("Invalid query parameter")) {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: "Error fetching orders" });
   }
 };

@@ -8,9 +8,21 @@ interface CreateOrderDTO {
   timestamp: Date;
 }
 
+interface GetOrdersOptions {
+  page?: number;
+  limit?: number;
+  filters?: {
+    id?: number;
+    minSubtotal?: number;
+    maxSubtotal?: number;
+    minTotal?: number;
+    maxTotal?: number;
+  };
+}
+
 class OrderService {
-  async getAllOrders() {
-    return orderRepository.findAll();
+  async getAllOrders(options: GetOrdersOptions = {}) {
+    return orderRepository.findAll(options);
   }
 
   async createOrder(data: CreateOrderDTO) {
