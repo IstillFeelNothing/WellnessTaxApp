@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import ordersRoutes from "./routes/orders.routes";
+import { initDb } from "./config/db";
 
 const app = express();
 
@@ -10,6 +11,15 @@ app.use("/orders", ordersRoutes);
 
 const PORT = 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const start = async () => {
+  await initDb();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+start().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
 });

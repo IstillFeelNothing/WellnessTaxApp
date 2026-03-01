@@ -14,7 +14,7 @@
 - Список замовлень із фільтрами та пагінацією.
 
 ## Технології
-- Backend: Express, TypeScript, Multer, csv-parser
+- Backend: Express, TypeScript, SQLite, Multer, csv-parser
 - Frontend: React, TypeScript, Vite, Axios, React Router
 - Root: concurrently для одночасного запуску frontend/backend
 
@@ -137,9 +137,10 @@ latitude,longitude,subtotal,timestamp
 ```
 
 ## Важливо про зберігання даних
-Зараз використовується in-memory репозиторій (`backend/src/repositories/order.repository.ts`):
-- дані не зберігаються після перезапуску backend
-- `id` генерується послідовно в пам'яті
+Зараз використовується SQLite база:
+- файл БД: `backend/data/wellness-tax.sqlite`
+- таблиця `orders` створюється автоматично при старті backend
+- `id` генерується як `AUTOINCREMENT`
 
 ## Податкові ставки (поточна реалізація)
 `tax.service.ts` повертає фіксовані значення:
@@ -157,7 +158,8 @@ latitude,longitude,subtotal,timestamp
 - `/create` — створення одного замовлення + імпорт CSV
 
 ## Можливі покращення
-- Додати постійну БД (PostgreSQL/MySQL/MongoDB)
+- Міграції схеми БД
+- За потреби перехід на PostgreSQL/MySQL
 - Валідацію схем (`zod`/`joi`)
 - Тести (unit + integration)
 - Docker для локального запуску
